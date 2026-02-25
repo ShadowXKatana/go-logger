@@ -1,0 +1,12 @@
+mode: set
+github.com/ShadowXKatana/go-logger/logger.go:33.31,38.2 1 0
+github.com/ShadowXKatana/go-logger/logger.go:40.47,41.22 1 1
+github.com/ShadowXKatana/go-logger/logger.go:41.22,44.3 2 1
+github.com/ShadowXKatana/go-logger/logger.go:48.36,48.57 1 1
+github.com/ShadowXKatana/go-logger/logger.go:51.35,51.55 1 1
+github.com/ShadowXKatana/go-logger/logger.go:54.35,54.55 1 1
+github.com/ShadowXKatana/go-logger/logger.go:57.36,57.57 1 1
+github.com/ShadowXKatana/go-logger/logger.go:60.53,60.99 1 0
+github.com/ShadowXKatana/go-logger/logger.go:63.52,63.97 1 1
+github.com/ShadowXKatana/go-logger/logger.go:66.52,66.97 1 0
+github.com/ShadowXKatana/go-logger/logger.go:69.53,69.99 1 0
