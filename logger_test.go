@@ -1,72 +1,77 @@
 package logger
 
 import (
-	"bytes"
-	"log"
-	"strings"
 	"testing"
+
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+	"go.uber.org/zap/zaptest/observer"
 )
 
-func newTestLogger(level Level) (*Logger, *bytes.Buffer) {
-	buf := &bytes.Buffer{}
-	l := &Logger{
-		level:  level,
-		logger: log.New(buf, "", 0),
-	}
-	return l, buf
+// newTestLogger returns a Logger backed by an in-memory observer core so tests
+// can inspect emitted entries without touching stdout.
+func newTestLogger(level Level) (*Logger, *observer.ObservedLogs) {
+	core, logs := observer.New(level)
+	return &Logger{z: zap.New(core)}, logs
 }
 
 func TestLevels(t *testing.T) {
 	tests := []struct {
 		name    string
-		level   Level
 		logFunc func(l *Logger)
-		want    string
+		wantMsg string
+		wantLvl zapcore.Level
 	}{
-		{"debug", DEBUG, func(l *Logger) { l.Debug("hello") }, "[DEBUG] hello"},
-		{"info", INFO, func(l *Logger) { l.Info("hello") }, "[INFO] hello"},
-		{"warn", WARN, func(l *Logger) { l.Warn("hello") }, "[WARN] hello"},
-		{"error", ERROR, func(l *Logger) { l.Error("hello") }, "[ERROR] hello"},
+		{"debug", func(l *Logger) { l.Debug("hello") }, "hello", DEBUG},
+		{"info", func(l *Logger) { l.Info("hello") }, "hello", INFO},
+		{"warn", func(l *Logger) { l.Warn("hello") }, "hello", WARN},
+		{"error", func(l *Logger) { l.Error("hello") }, "hello", ERROR},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			l, buf := newTestLogger(DEBUG)
+			l, logs := newTestLogger(DEBUG)
 			tt.logFunc(l)
-			got := strings.TrimSpace(buf.String())
-			if got != tt.want {
-				t.Errorf("got %q, want %q", got, tt.want)
+			if logs.Len() != 1 {
+				t.Fatalf("expected 1 log entry, got %d", logs.Len())
+			}
+			entry := logs.All()[0]
+			if entry.Message != tt.wantMsg {
+				t.Errorf("message: got %q, want %q", entry.Message, tt.wantMsg)
+			}
+			if entry.Level != tt.wantLvl {
+				t.Errorf("level: got %v, want %v", entry.Level, tt.wantLvl)
 			}
 		})
 	}
 }
 
 func TestLevelFiltering(t *testing.T) {
-	l, buf := newTestLogger(WARN)
+	l, logs := newTestLogger(WARN)
 	l.Debug("should not appear")
 	l.Info("should not appear")
 	l.Warn("should appear")
 	l.Error("should also appear")
 
-	out := buf.String()
-	if strings.Contains(out, "should not appear") {
-		t.Errorf("expected messages below WARN to be filtered, got: %s", out)
+	for _, e := range logs.All() {
+		if e.Message == "should not appear" {
+			t.Errorf("expected messages below WARN to be filtered, got: %v", e.Message)
+		}
 	}
-	if !strings.Contains(out, "should appear") {
-		t.Errorf("expected WARN message to appear, got: %s", out)
-	}
-	if !strings.Contains(out, "should also appear") {
-		t.Errorf("expected ERROR message to appear, got: %s", out)
+	if logs.Len() != 2 {
+		t.Errorf("expected 2 log entries (WARN + ERROR), got %d", logs.Len())
 	}
 }
 
 func TestFormatted(t *testing.T) {
-	l, buf := newTestLogger(DEBUG)
+	l, logs := newTestLogger(DEBUG)
 	l.Infof("hello %s %d", "world", 42)
-	got := strings.TrimSpace(buf.String())
-	want := "[INFO] hello world 42"
-	if got != want {
-		t.Errorf("got %q, want %q", got, want)
+	if logs.Len() != 1 {
+		t.Fatalf("expected 1 log entry, got %d", logs.Len())
+	}
+	want := "hello world 42"
+	if logs.All()[0].Message != want {
+		t.Errorf("got %q, want %q", logs.All()[0].Message, want)
 	}
 }
 
@@ -74,19 +79,26 @@ func TestFormattedAllLevels(t *testing.T) {
 	tests := []struct {
 		name    string
 		logFunc func(l *Logger)
-		want    string
+		wantMsg string
+		wantLvl zapcore.Level
 	}{
-		{"debugf", func(l *Logger) { l.Debugf("val=%d", 1) }, "[DEBUG] val=1"},
-		{"warnf", func(l *Logger) { l.Warnf("val=%d", 2) }, "[WARN] val=2"},
-		{"errorf", func(l *Logger) { l.Errorf("val=%d", 3) }, "[ERROR] val=3"},
+		{"debugf", func(l *Logger) { l.Debugf("val=%d", 1) }, "val=1", DEBUG},
+		{"warnf", func(l *Logger) { l.Warnf("val=%d", 2) }, "val=2", WARN},
+		{"errorf", func(l *Logger) { l.Errorf("val=%d", 3) }, "val=3", ERROR},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			l, buf := newTestLogger(DEBUG)
+			l, logs := newTestLogger(DEBUG)
 			tt.logFunc(l)
-			got := strings.TrimSpace(buf.String())
-			if got != tt.want {
-				t.Errorf("got %q, want %q", got, tt.want)
+			if logs.Len() != 1 {
+				t.Fatalf("expected 1 log entry, got %d", logs.Len())
+			}
+			entry := logs.All()[0]
+			if entry.Message != tt.wantMsg {
+				t.Errorf("message: got %q, want %q", entry.Message, tt.wantMsg)
+			}
+			if entry.Level != tt.wantLvl {
+				t.Errorf("level: got %v, want %v", entry.Level, tt.wantLvl)
 			}
 		})
 	}
@@ -97,7 +109,7 @@ func TestNew(t *testing.T) {
 	if l == nil {
 		t.Fatal("New returned nil")
 	}
-	if l.level != INFO {
-		t.Errorf("expected level INFO, got %v", l.level)
+	if l.z == nil {
+		t.Fatal("New returned Logger with nil zap instance")
 	}
 }
