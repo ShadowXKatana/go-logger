@@ -69,3 +69,35 @@ func TestFormatted(t *testing.T) {
 		t.Errorf("got %q, want %q", got, want)
 	}
 }
+
+func TestFormattedAllLevels(t *testing.T) {
+	tests := []struct {
+		name    string
+		logFunc func(l *Logger)
+		want    string
+	}{
+		{"debugf", func(l *Logger) { l.Debugf("val=%d", 1) }, "[DEBUG] val=1"},
+		{"warnf", func(l *Logger) { l.Warnf("val=%d", 2) }, "[WARN] val=2"},
+		{"errorf", func(l *Logger) { l.Errorf("val=%d", 3) }, "[ERROR] val=3"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			l, buf := newTestLogger(DEBUG)
+			tt.logFunc(l)
+			got := strings.TrimSpace(buf.String())
+			if got != tt.want {
+				t.Errorf("got %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestNew(t *testing.T) {
+	l := New(INFO)
+	if l == nil {
+		t.Fatal("New returned nil")
+	}
+	if l.level != INFO {
+		t.Errorf("expected level INFO, got %v", l.level)
+	}
+}
