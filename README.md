@@ -1,6 +1,6 @@
 # go-logger
 
-A simple leveled logger for Go.
+A simple leveled logger for Go that emits structured JSON logs, backed by [go.uber.org/zap](https://pkg.go.dev/go.uber.org/zap).
 
 ## Installation
 
@@ -23,7 +23,10 @@ func main() {
     log.Warn("low memory")
     log.Error("something went wrong")
 
+    log.Debugf("connecting to %s", "localhost")
     log.Infof("user %s logged in", "alice")
+    log.Warnf("retrying %d more times", 3)
+    log.Errorf("failed to open %s", "config.yaml")
 }
 ```
 
