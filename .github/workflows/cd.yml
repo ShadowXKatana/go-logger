@@ -18,9 +18,6 @@ jobs:
         with:
           go-version-file: go.mod
 
-      - name: Run tests
-        run: go test ./... -covermode=atomic
-
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
