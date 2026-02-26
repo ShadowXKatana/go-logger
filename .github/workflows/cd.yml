@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GO_PRIVATE_LIB_LOGGER_ACCESS }}
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -25,4 +25,4 @@ jobs:
           name: 'Release ${{ github.ref_name }}'
           generate_release_notes: true
         env:
-          GITHUB_TOKEN: ${{ secrets.GO_PRIVATE_LIB_LOGGER_ACCESS }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
