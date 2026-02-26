@@ -3,7 +3,7 @@ name: CD
 on:
   push:
     tags:
-      - "v*"
+      - 'v*'
 
 jobs:
   release:
@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GITHUB_PAT }}
+          token: ${{ secrets.GO_PRIVATE_LIB_LOGGER_ACCESS }}
 
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -25,7 +25,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
-          name: "Release ${{ github.ref_name }}"
+          name: 'Release ${{ github.ref_name }}'
           generate_release_notes: true
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_PAT }}
+          GITHUB_TOKEN: ${{ secrets.GO_PRIVATE_LIB_LOGGER_ACCESS }}
