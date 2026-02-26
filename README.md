@@ -57,16 +57,37 @@ go tool cover -func=coverage.out
 
 ### Continuous Deployment (CD)
 
-The CD workflow (`.github/workflows/cd.yml`) triggers when a tag matching `v*` is pushed. It runs the tests and then automatically creates a **GitHub Release** with generated release notes.
+The CD workflow (`.github/workflows/cd.yml`) triggers when a tag matching `v*` is pushed. It:
 
-To cut a new release:
+1. Checks out the repository using the `GITHUB_PAT` secret.
+2. Sets up Go using the version in `go.mod`.
+3. Runs all tests to confirm the release is stable.
+4. Creates a **GitHub Release** with auto-generated release notes.
+
+#### Prerequisites — set up `GITHUB_PAT`
+
+The workflow requires a Personal Access Token (PAT) stored as a repository secret named `GITHUB_PAT`.
+
+1. Go to **GitHub → Settings → Developer settings → Personal access tokens → Fine-grained tokens** and click **Generate new token**.
+2. Under **Repository access**, select this repository.
+3. Under **Permissions → Repository permissions**, grant **Contents: Read and write**.
+4. Generate the token and copy it.
+5. In this repository go to **Settings → Secrets and variables → Actions → New repository secret**.
+6. Set the name to `GITHUB_PAT` and paste the token as the value, then click **Add secret**.
+
+#### Cutting a release
+
+Once `GITHUB_PAT` is configured, push a version tag to trigger the CD workflow:
 
 ```bash
-git tag v1.0.0
+# create an annotated tag
+git tag -a v1.0.0 -m "Release v1.0.0"
+
+# push the tag to GitHub — this triggers the CD workflow
 git push origin v1.0.0
 ```
 
-> **Note:** The CD workflow uses the `GITHUB_PAT` repository secret. Ensure this secret is configured in **Settings → Secrets and variables → Actions** before pushing a release tag.
+The workflow will run, pass the tests, and publish a new release on the repository's **Releases** page.
 
 ## License
 
